@@ -118,8 +118,15 @@ VERSE <- function(DATA,COUNTRY,VACCINES,SCHEDULE,FACTORS,GEO){
     dhs_data[,nameref] = REF[j]
   }
   
+  #Apply Names to Numeric Geographic Units
+  setNames(dhs_data$v101, dhs_data$geo_names)
+  names(dhs_data$v101)<- dhs_data$geo_names
+
+  #Sort Data by Geograpic Area
+  dhs_data <- dhs_data[order(dhs_data$v101),]
+  
   #Create Names Vector for Regions
-  GEO_CI<- c(dhs_data$geo_names)
+  GEO_CI<-unique(names(dhs_data$v101))
   
   # Crete shell dataframes to store the geographic-specific outputs
   CI_Results_GEO_Output <- data.frame(matrix(NA, nrow = length(GEO_CI), ncol = 1))
@@ -418,7 +425,7 @@ VERSE <- function(DATA,COUNTRY,VACCINES,SCHEDULE,FACTORS,GEO){
     
     #Create Equity-Efficiency Plane
     invisible(capture.output(efficiency_data <- data_ic %>% 
-                               group_by(data_ic$v024) %>% 
+                               group_by(data_ic$v101) %>% 
                                summarise(coverage=weighted.mean(outcome,v005),
                                          underage = weighted.mean(underage_i,v005),
                                          urban_rural = weighted.mean(v025,v005)*100/2,
@@ -427,8 +434,8 @@ VERSE <- function(DATA,COUNTRY,VACCINES,SCHEDULE,FACTORS,GEO){
                                          sex = weighted.mean(b4,v005)*100/2,
                                          insurance = weighted.mean(v481,v005))))
     
-        GEO_UNIT <- c(dhs_data$v101)
-        GEO_NAMES <- c(dhs_data$geo_names)
+        GEO_UNIT <- c(efficiency_data$`data_ic$v101`)
+        GEO_NAMES <- c(names(efficiency_data$`data_ic$v101`))
         GEO_LABEL<- paste(GEO_UNIT, GEO_NAMES, sep=" = ")
     
     efficiency <- cbind.data.frame(CI_Results_GEO, GEO_UNIT, GEO_NAMES, GEO_LABEL, efficiency_data)
