@@ -42,13 +42,15 @@ library(foreign)
 setwd("~/Downloads")
 
 #Create Input Vectors
-VACCINES<-c("HIB1")
+VACCINES<-c("MCV1")
 SCHEDULE<-c("DEFAULT")
+SCHEDULE<-c(3)
 GEO = "Region"
 COUNTRY<-"China"
 FACTORS<-c("region","rural","education","wealth","sex","insurance")
-DATA<-read_csv("VERSE-China-data format2.csv")
-
+DATA<-read_csv("VERSE_EXCEL_SAMPLE_DATA.csv")
+DATA<-read_csv("UgandaDHS2016.csv")
+DATA<-read_excel(file.choose("UgandaDHS20162.xlsx"))
 
 VERSE <- function(DATA,COUNTRY,VACCINES,SCHEDULE,FACTORS,GEO){
 
@@ -92,6 +94,7 @@ VERSE <- function(DATA,COUNTRY,VACCINES,SCHEDULE,FACTORS,GEO){
   
 
   # Create Reference Levels Based on Fully Immunized for Age Outcome
+  
   REF<- c()
   
   for(l in FACT){
@@ -119,7 +122,7 @@ VERSE <- function(DATA,COUNTRY,VACCINES,SCHEDULE,FACTORS,GEO){
   }
   
   #Apply Names to Numeric Geographic Units
-  setNames(dhs_data$v101, dhs_data$geo_names)
+  #setNames(dhs_data$v101, dhs_data$geo_names)
   names(dhs_data$v101)<- dhs_data$geo_names
 
   #Sort Data by Geograpic Area
@@ -456,27 +459,31 @@ VERSE <- function(DATA,COUNTRY,VACCINES,SCHEDULE,FACTORS,GEO){
         scale_y_continuous(name="Prevalence") +
         scale_x_continuous(name = "Inequality: Composite Index") +
         theme_classic(base_size = 16) +
-        geom_label_repel(label=GEO_UNIT, size=2, max.overlaps = Inf) +
+        geom_label_repel(label=GEO_UNIT, size=2, max.overlaps = Inf, fill = "white") +
         ggtitle(etitle) +
         theme(axis.title.y = element_text(angle = 0)) +
         guides(colour = guide_legend(ncol = 3)) +
         theme(legend.position="bottom") +
         labs(colour = GEO) +
-        scale_colour_manual(values=color_vector)
+        scale_colour_manual(values=color_vector, labels=GEO_LABEL) +
+        guides(color = guide_legend(override.aes = list(size = 0)))
+        
       
     } else{
-      efficiency_i<- ggplot(efficiency_list[[i]],aes(x= equity_axis,y=coverage*100, colour = GEO_LABEL)) +
+      efficiency_i<- ggplot(efficiency_list[[i]],aes(x= equity_axis,y=coverage*100, colour = GEO_NAMES, label=GEO_UNIT)) +
         geom_point(alpha = .4,shape=20, color="blue3") +
         scale_y_continuous(name="% Coverage") +
         scale_x_continuous(name = "Equity: (1 - Composite Index)") +
         theme_classic(base_size = 16) +
-        geom_label_repel(label=GEO_UNIT, size=2, max.overlaps = Inf) +
+        geom_label_repel(label=GEO_UNIT, size=2, max.overlaps = Inf, fill = "white") +
         ggtitle(etitle)+
         theme(axis.title.y = element_text(angle = 0)) + 
         guides(colour = guide_legend(ncol = 3)) +
         theme(legend.position="bottom") +
         labs(colour = GEO) +
-        scale_colour_manual(values=color_vector)
+        scale_colour_manual(values=color_vector, labels=GEO_LABEL) +
+        guides(color = guide_legend(override.aes = list(size = 0)))
+
       
     }
     
