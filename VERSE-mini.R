@@ -42,15 +42,12 @@ library(foreign)
 setwd("~/Downloads")
 
 #Create Input Vectors
-VACCINES<-c("MCV1")
-SCHEDULE<-c("DEFAULT")
-SCHEDULE<-c(3)
+VACCINES<-c("PENTA1","MCV1","FULL")
+SCHEDULE<-c(1.5,3,0)
 GEO = "Region"
-COUNTRY<-"China"
+COUNTRY<-"Uganda"
 FACTORS<-c("region","rural","education","wealth","sex","insurance")
-DATA<-read_csv("VERSE_EXCEL_SAMPLE_DATA.csv")
-DATA<-read_csv("UgandaDHS2016.csv")
-DATA<-read_excel(file.choose("UgandaDHS20162.xlsx"))
+DATA<-read_csv("UGANDA2016DHS.csv")
 
 VERSE <- function(DATA,COUNTRY,VACCINES,SCHEDULE,FACTORS,GEO){
 
@@ -59,9 +56,26 @@ VERSE <- function(DATA,COUNTRY,VACCINES,SCHEDULE,FACTORS,GEO){
   output_list <- list()
   efficiency_list <- list()
   CI_Results<- c()
+  CI_Results_95ciLB<- c()
+  CI_Results_95ciUB<- c()
   CI_E_Results<- c()
+  CI_E_Results_95ciLB<- c()
+  CI_E_Results_95ciUB<- c()
   AEG_Composite_Results<- c()
+  AEG_Composite_Results_95ciLB<- c()
+  AEG_Composite_Results_95ciUB<- c()
+  CI_Wealth_Results<- c()
+  CI_Wealth_Results_95ciLB<- c()
+  CI_Wealth_Results_95ciUB<- c()
+  CI_E_Wealth_Results<- c()
+  CI_E_Wealth_Results_95ciLB<- c()
+  CI_E_Wealth_Results_95ciUB<- c()
+  AEG_Wealth_Results<- c()
+  AEG_Wealth_Results_95ciLB<- c()
+  AEG_Wealth_Results_95ciUB<- c()
   Coverage_Results<- c()
+  Coverage_Results_95ciLB<- c()
+  Coverage_Results_95ciUB<- c()
   
 # Rename DATA to correspond with VERSE programming
     dhs_data <- DATA
@@ -79,7 +93,6 @@ VERSE <- function(DATA,COUNTRY,VACCINES,SCHEDULE,FACTORS,GEO){
     names(dhs_data)[names(dhs_data) == "q"] <- paste("underage_",i, sep="")
   }
   
-  
 # Create Reference Values Vector
   FACT<-c()
   
@@ -94,7 +107,6 @@ VERSE <- function(DATA,COUNTRY,VACCINES,SCHEDULE,FACTORS,GEO){
   
 
   # Create Reference Levels Based on Fully Immunized for Age Outcome
-  
   REF<- c()
   
   for(l in FACT){
@@ -133,34 +145,40 @@ VERSE <- function(DATA,COUNTRY,VACCINES,SCHEDULE,FACTORS,GEO){
   
   # Crete shell dataframes to store the geographic-specific outputs
   CI_Results_GEO_Output <- data.frame(matrix(NA, nrow = length(GEO_CI), ncol = 1))
+  CI_Results_GEO_Output_95ciLB <- data.frame(matrix(NA, nrow = length(GEO_CI), ncol = 1))
+  CI_Results_GEO_Output_95ciUB <- data.frame(matrix(NA, nrow = length(GEO_CI), ncol = 1))
   CI_E_Results_GEO_Output<- data.frame(matrix(NA, nrow = length(GEO_CI), ncol = 1))
+  CI_E_Results_GEO_Output_95ciLB <- data.frame(matrix(NA, nrow = length(GEO_CI), ncol = 1))
+  CI_E_Results_GEO_Output_95ciUB <- data.frame(matrix(NA, nrow = length(GEO_CI), ncol = 1))
   AEG_Composite_Results_GEO_Output<- data.frame(matrix(NA, nrow = length(GEO_CI), ncol = 1))
+  AEG_Composite_Results_GEO_Output_95ciLB<- data.frame(matrix(NA, nrow = length(GEO_CI), ncol = 1))
+  AEG_Composite_Results_GEO_Output_95ciUB<- data.frame(matrix(NA, nrow = length(GEO_CI), ncol = 1))
+  CI_Wealth_Results_GEO_Output <- data.frame(matrix(NA, nrow = length(GEO_CI), ncol = 1))
+  CI_Wealth_Results_GEO_95ciLB_Output <- data.frame(matrix(NA, nrow = length(GEO_CI), ncol = 1))
+  CI_Wealth_Results_GEO_95ciUB_Output <- data.frame(matrix(NA, nrow = length(GEO_CI), ncol = 1))
+  CI_E_Wealth_Results_GEO_Output<- data.frame(matrix(NA, nrow = length(GEO_CI), ncol = 1))
+  CI_E_Wealth_Results_GEO_95ciLB_Output <- data.frame(matrix(NA, nrow = length(GEO_CI), ncol = 1))
+  CI_E_Wealth_Results_GEO_95ciUB_Output <- data.frame(matrix(NA, nrow = length(GEO_CI), ncol = 1))
+  AEG_Wealth_Results_GEO_Output<- data.frame(matrix(NA, nrow = length(GEO_CI), ncol = 1))
+  AEG_Wealth_Results_GEO_95ciLB_Output<- data.frame(matrix(NA, nrow = length(GEO_CI), ncol = 1))
+  AEG_Wealth_Results_GEO_95ciUB_Output<- data.frame(matrix(NA, nrow = length(GEO_CI), ncol = 1))
   Coverage_Results_GEO_Output<- data.frame(matrix(NA, nrow = length(GEO_CI), ncol = 1))
+  Coverage_Results_GEO_Output_95ciLB<- data.frame(matrix(NA, nrow = length(GEO_CI), ncol = 1))
+  Coverage_Results_GEO_Output_95ciUB<- data.frame(matrix(NA, nrow = length(GEO_CI), ncol = 1))
   
   for (i in VACCINES){
-    
-    #i = "HIB1"
     
     # convert vaccines to to numeric vector
     dhs_data[,i] <- as.numeric(unlist(dhs_data[,i]))
     
-    #Create Vaccine-Specific Variables
+    #Create Vaccine-Specific Underage & Outcome Variables
     underage_name <- paste("underage_",i, sep="")
     q <- dhs_data[,underage_name]
     dhs_data<-cbind(dhs_data,q)
-    #dhs_data$underage_i = dhs_data[,underage_name]
     outcome_name <- paste("",i, sep="")
     q<- dhs_data[, outcome_name]
     dhs_data<-cbind(dhs_data,q)
-    #dhs_data$outcome =  dhs_data[, outcome_name]
-    #q<-  dhs_data$outcome
-    #dhs_data<-cbind(dhs_data,q)
-    
-    # Create Design Matrix
-    #design <- svydesign(data = dhs_data,
-    #                    ids = ~caseid,
-    #                    weights = ~v005)
-    
+   
     # Subset Data to be only data where outcome data is available
     data_i <- subset(dhs_data, dhs_data[,i]==1|dhs_data[,i]==0)
     data_i<- rename(data_i, outcome = outcome_name)
@@ -202,9 +220,7 @@ VERSE <- function(DATA,COUNTRY,VACCINES,SCHEDULE,FACTORS,GEO){
     
     # Computing Direct Unfairness Metric
     # Compute predicted probability holding child age (fair equity) at reference category (DTP1_underage==0)
-    
     data_i_unfair <- data.frame(data_i)
-    #data_i_unfair$underage_i <- replace(data_i_unfair[,underage_i],data_i_unfair[,underage_i]==1,0)
     data_i_unfair$underage_i <- replace(data_i_unfair$underage_i,data_i_unfair$underage_i==1,0)
     
     # Create New Predictions on Direct Unfairness Dataset
@@ -212,7 +228,6 @@ VERSE <- function(DATA,COUNTRY,VACCINES,SCHEDULE,FACTORS,GEO){
     
     # Computing Predicted Fairness Metric    
     # Compute predicted probability holding all unfair variables at reference levels (fairness equity) at reference category levels
-    
     data_i_fair <- data.frame(data_i)
     
     # Create Reference Level Variable Dataset for all of the Fair Predictors
@@ -224,7 +239,6 @@ VERSE <- function(DATA,COUNTRY,VACCINES,SCHEDULE,FACTORS,GEO){
     data_i_fair$v190 <- replace(data_i_fair$v190,data_i_fair$v190!=0,0)
     data_i_fair$b4 <- replace(data_i_fair$b4,data_i_fair$b4!=0,0)
     data_i_fair$v481 <- replace(data_i_fair$v481,data_i_fair$v481!=0,0)
-    
     
     data_i_fair$v101 <- replace(data_i_fair$v101,data_i_fair$v101!=REF[1],REF[1])
     data_i_fair$v025 <- replace(data_i_fair$v025,data_i_fair$v025!=REF[2],REF[2])
@@ -257,12 +271,14 @@ VERSE <- function(DATA,COUNTRY,VACCINES,SCHEDULE,FACTORS,GEO){
     # Calculating the Direct Concentration Index
     direct_ci <- ci(y = data_i[,"outcome"], x = pred_probs_2$hci_du.response, type = "CI")
     CI_1 <- concentration_index(direct_ci)
-    CI_1
+    CI_1_95ciLB<- round(CI_1 - 1.96*sqrt(direct_ci$variance), digits = 3)
+    CI_1_95ciUB<- round(CI_1 + 1.96*sqrt(direct_ci$variance), digits = 3)
  
     # Calculating the Erreygers Corrected Composite Concentration Index 
     CIE <- ci(y = data_i[,"outcome"], x = pred_probs_2$hci_du.response, type = "CIc")
     CI_E <- concentration_index(CIE)
-    CI_E
+    CI_E_95ciLB<- round(CI_E - 1.96*sqrt(CIE$variance), digits = 3)
+    CI_E_95ciUB<- round(CI_E + 1.96*sqrt(CIE$variance), digits = 3)
     
     # Calculating the Composite Absolute Equity Gap
     rank<-c(pred_probs_2$hci_du.response)
@@ -270,21 +286,78 @@ VERSE <- function(DATA,COUNTRY,VACCINES,SCHEDULE,FACTORS,GEO){
     comp_data<- data.frame(cbind(data_i[,"outcome"],data_i[,"v005"],rank))
     names(comp_data)[names(comp_data) == "V1"] <- paste("",i, sep="")
     names(comp_data)[names(comp_data) == "V2"] <- paste("v005","", sep="")
-    AEG_Composite <- round(weighted.mean(comp_data[,i][rank>=quantiles[5]],comp_data[,"v005"][rank>=quantiles[5]]) - weighted.mean(comp_data[,i][rank>=quantiles[2]],comp_data[,"v005"][rank>=quantiles[2]]), digits=3)
+    AEG_Composite <- round(weighted.mean(comp_data[,i][rank>=quantiles[5]],comp_data[,"v005"][rank>=quantiles[5]]) - weighted.mean(comp_data[,i][rank<=quantiles[2]],comp_data[,"v005"][rank<=quantiles[2]]), digits=3)
+    AEG_Composite_95ciLB <- round(AEG_Composite - (1.96*round(sqrt(((weighted.sd(comp_data[,i][rank>=quantiles[5]],comp_data[,"v005"][rank>=quantiles[5]]))^2)/length(comp_data[,i][rank>=quantiles[5]]) + (((weighted.sd(comp_data[,i][rank<=quantiles[2]],comp_data[,"v005"][rank<=quantiles[2]]))^2)/length(comp_data[,i][rank<=quantiles[2]]))), digits=3)), digits = 3)
+    AEG_Composite_95ciUB <- round(AEG_Composite + (1.96*round(sqrt(((weighted.sd(comp_data[,i][rank>=quantiles[5]],comp_data[,"v005"][rank>=quantiles[5]]))^2)/length(comp_data[,i][rank>=quantiles[5]]) + (((weighted.sd(comp_data[,i][rank<=quantiles[2]],comp_data[,"v005"][rank<=quantiles[2]]))^2)/length(comp_data[,i][rank<=quantiles[2]]))), digits=3)), digits = 3)
     
+    # Calculating the Wealth-Based Concentration Index
+    ci_wagstaff <- ci(x=data_i[,"outcome"],y=data_i$v190,wt=data_i$v005,type = "CI")
+    CI_W_Wealth <- round(concentration_index(ci_wagstaff), digits = 3)
+    CI_W_Wealth_95ciLB<- round(CI_W_Wealth - 1.96*sqrt(abs(ci_wagstaff$variance)), digits = 3)
+    CI_W_Wealth_95ciUB<- round(CI_W_Wealth + 1.96*sqrt(abs(ci_wagstaff$variance)), digits = 3)
+    
+    # Calculating the Erreygers Corrected Wealth-Based Concentration Index 
+    ci_errygers <- ci(x=data_i[,"outcome"],y=data_i$v190,wt=data_i$v005,type = "CIc")
+    CI_E_Wealth <- round(concentration_index(ci_errygers), digits = 3)
+    CI_E_Wealth_95ciLB<- round(CI_E_Wealth - 1.96*sqrt(abs(ci_errygers$variance)), digits = 3)
+    CI_E_Wealth_95ciUB<- round(CI_E_Wealth + 1.96*sqrt(abs(ci_errygers$variance)), digits = 3)
+    
+    # Calculating the Wealth-Based Absolute Equity Gap
+    comp_data<- data.frame(cbind(data_i[,"outcome"],data_i[,"v005"],data_i[,"v190"]))
+    names(comp_data)[names(comp_data) == "X1"] <- paste("",i, sep="")
+    names(comp_data)[names(comp_data) == "X2"] <- paste("v005","", sep="")
+    names(comp_data)[names(comp_data) == "X3"] <- paste("v190","", sep="")
+    AEG_Wealth <- round(weighted.mean(comp_data[,i][comp_data$v190>=5],comp_data[,"v005"][comp_data$v190>=5]) - weighted.mean(comp_data[,i][comp_data$v190<2],comp_data[,"v005"][comp_data$v190<2]), digits=3)
+    AEG_Wealth_95ciLB <- round(AEG_Wealth - (1.96*round(sqrt(((weighted.sd(comp_data[,i][comp_data$v190>=5],comp_data[,"v005"][comp_data$v190>=5]))^2)/length(comp_data[,i][comp_data$v190>=5]) + (((weighted.sd(comp_data[,i][comp_data$v190<2],comp_data[,"v005"][comp_data$v190<2]))^2)/length(comp_data[,i][comp_data$v190<2]))), digits=3)), digits = 3)
+    AEG_Wealth_95ciUB <- round(AEG_Wealth + (1.96*round(sqrt(((weighted.sd(comp_data[,i][comp_data$v190>=5],comp_data[,"v005"][comp_data$v190>=5]))^2)/length(comp_data[,i][comp_data$v190>=5]) + (((weighted.sd(comp_data[,i][comp_data$v190<2],comp_data[,"v005"][comp_data$v190<2]))^2)/length(comp_data[,i][comp_data$v190<2]))), digits=3)), digits = 3)
+
     assign(paste("CI_1_",i, sep=""),CI_1)
+    assign(paste("CI_1_95ciLB_",i, sep=""), CI_1_95ciLB)
+    assign(paste("CI_1_95ciUB_",i, sep=""), CI_1_95ciUB)
     assign(paste("CI_E_",i, sep=""),CI_E)
+    assign(paste("CI_E_95ciLB_",i, sep=""), CI_E_95ciLB)
+    assign(paste("CI_E_95ciUB_",i, sep=""), CI_E_95ciUB)
     assign(paste("AEG_Composite_",i, sep=""),AEG_Composite)
+    assign(paste("AEG_Composite_95ciLB_",i, sep=""), AEG_Composite_95ciLB)
+    assign(paste("AEG_Composite_95ciUB_",i, sep=""), AEG_Composite_95ciUB)
+    assign(paste("CI_1_Wealth_",i, sep=""),CI_W_Wealth)
+    assign(paste("CI_1_Wealth_95ciLB_",i, sep=""), CI_W_Wealth_95ciLB)
+    assign(paste("CI_1_Wealth_95ciUB_",i, sep=""), CI_W_Wealth_95ciUB)
+    assign(paste("CI_E_Wealth_",i, sep=""),CI_E_Wealth)
+    assign(paste("CI_E_Wealth_95ciLB_",i, sep=""), CI_E_Wealth_95ciLB)
+    assign(paste("CI_E_Wealth_95ciUB_",i, sep=""), CI_E_Wealth_95ciUB)
+    assign(paste("AEG_Wealth_",i, sep=""),AEG_Wealth)
+    assign(paste("AEG_Wealth_95ciLB_",i, sep=""), AEG_Wealth_95ciLB)
+    assign(paste("AEG_Wealth_95ciUB_",i, sep=""), AEG_Wealth_95ciUB)
     
     #Subset Coverage to be only among correct for age-group for Vaccine (older than schedule age)
     data_ic <- subset(data_i, data_i[,"underage_i"]==0)
     coverage<- c(weighted.mean(data_ic$outcome,data_ic$v005))
+    coverage_95ciLB<- round(coverage - (1.96*sqrt((coverage*(1-coverage))/length(data_ic$outcome))), digits = 3)
+    coverage_95ciUB<- round(coverage + (1.96*sqrt((coverage*(1-coverage))/length(data_ic$outcome))), digits = 3)
     
     #Name other CI Results
     CI_Results<- c(CI_Results, assign(paste("CI_1_",i, sep=""),CI_1))
+    CI_Results_95ciLB<- c(CI_Results_95ciLB,assign(paste("CI_1_95ciLB_",i, sep=""), CI_1_95ciLB))
+    CI_Results_95ciUB<- c(CI_Results_95ciUB,assign(paste("CI_1_95ciUB_",i, sep=""), CI_1_95ciUB))
     CI_E_Results<- c(CI_E_Results, assign(paste("CI_E_",i, sep=""),CI_E))
+    CI_E_Results_95ciLB<- c(CI_E_Results_95ciLB,assign(paste("CI_E_95ciLB_",i, sep=""), CI_E_95ciLB))
+    CI_E_Results_95ciUB<- c(CI_E_Results_95ciUB,assign(paste("CI_E_95ciUB_",i, sep=""), CI_E_95ciUB))
     AEG_Composite_Results <- c(AEG_Composite_Results, assign(paste("AEG_Composite_",i, sep=""), AEG_Composite))
+    AEG_Composite_Results_95ciLB<- c(AEG_Composite_Results_95ciLB,assign(paste("AEG_Composite_95ciLB_",i, sep=""), AEG_Composite_95ciLB))
+    AEG_Composite_Results_95ciUB<- c(AEG_Composite_Results_95ciUB,assign(paste("AEG_Composite_95ciUB_",i, sep=""), AEG_Composite_95ciUB))
+    CI_Wealth_Results<- c(CI_Wealth_Results, assign(paste("CI_Wealth_",i, sep=""),CI_W_Wealth))
+    CI_Wealth_Results_95ciLB<- c(CI_Wealth_Results_95ciLB,assign(paste("CI_Wealth_95ciLB_",i, sep=""), CI_W_Wealth_95ciLB))
+    CI_Wealth_Results_95ciUB<- c(CI_Wealth_Results_95ciUB,assign(paste("CI_Wealth_95ciUB_",i, sep=""), CI_W_Wealth_95ciUB))
+    CI_E_Wealth_Results<- c(CI_E_Wealth_Results, assign(paste("CI_E_Wealth_",i, sep=""),CI_E_Wealth))
+    CI_E_Wealth_Results_95ciLB<- c(CI_E_Wealth_Results_95ciLB,assign(paste("CI_E_Wealth_95ciLB_",i, sep=""), CI_E_Wealth_95ciLB))
+    CI_E_Wealth_Results_95ciUB<- c(CI_E_Wealth_Results_95ciUB,assign(paste("CI_E_Wealth_95ciUB_",i, sep=""), CI_E_Wealth_95ciUB))
+    AEG_Wealth_Results <- c(AEG_Wealth_Results, assign(paste("AEG_Wealth_",i, sep=""), AEG_Wealth))
+    AEG_Wealth_Results_95ciLB<- c(AEG_Wealth_Results_95ciLB,assign(paste("AEG_Wealth_95ciLB_",i, sep=""), AEG_Wealth_95ciLB))
+    AEG_Wealth_Results_95ciUB<- c(AEG_Wealth_Results_95ciUB,assign(paste("AEG_Wealth_95ciUB_",i, sep=""), AEG_Wealth_95ciUB))
     Coverage_Results<- c(Coverage_Results, assign(paste("Coverage_",i, sep=""),coverage))
+    Coverage_Results_95ciLB<- c(Coverage_Results_95ciLB,assign(paste("Coverage_Results_95ciLB_",i, sep=""), coverage_95ciLB))
+    Coverage_Results_95ciUB<- c(Coverage_Results_95ciUB,assign(paste("Coverage_Results_95ciUB_",i, sep=""), coverage_95ciUB))
     
     #Decomposition Analysis
     design <- svydesign(data = data_i,
@@ -373,17 +446,39 @@ VERSE <- function(DATA,COUNTRY,VACCINES,SCHEDULE,FACTORS,GEO){
                     percent_t = sum(decomposition$percent_t,na.rm=TRUE))
     
     decomposition <- rbind.data.frame(decomposition,total)
+    decomposition$ciLB<- c(100*((decomposition$percent_t/100) - (1.96*sqrt(((decomposition$percent_t/100)*(1-(decomposition$percent_t/100)))/length(data_i$outcome)))))
+    decomposition$ciUB<- c(100*((decomposition$percent_t/100) + (1.96*sqrt(((decomposition$percent_t/100)*(1-(decomposition$percent_t/100)))/length(data_i$outcome)))))
+    
     
     output[,1] <- decomposition$name_t
-    output <- cbind.data.frame(output,round(decomposition$percent_t,digits=2))
+    output <- cbind.data.frame(output,round(decomposition$percent_t,digits=2), round(decomposition$ciLB,digits=2),round(decomposition$ciUB,digits=2))
     names(output)[names(output) == "round(decomposition$percent_t, digits = 2)"] <- paste("percent_",i, sep="")
     names(output)[1] <- "factors"
+    names(output)[3] <- paste("Percent95ciLB_",i, sep="")
+    names(output)[4] <- paste("Percent95ciUB_",i, sep="")
     
     #State-Level CIs
     CI_Results_GEO<- c()
+    CI_Results_GEO_95ciLB<- c()
+    CI_Results_GEO_95ciUB<- c()
     CI_E_Results_GEO <- c()
+    CI_E_Results_GEO_95ciLB<- c()
+    CI_E_Results_GEO_95ciUB<- c()
     AEG_Composite_Results_GEO <- c()
+    AEG_Composite_Results_GEO_95ciLB<- c()
+    AEG_Composite_Results_GEO_95ciUB<- c()
+    CI_Wealth_Results_GEO<- c()
+    CI_Wealth_Results_GEO_95ciLB<- c()
+    CI_Wealth_Results_GEO_95ciUB<- c()
+    CI_E_Wealth_Results_GEO <- c()
+    CI_E_Wealth_Results_GEO_95ciLB<- c()
+    CI_E_Wealth_Results_GEO_95ciUB<- c()
+    AEG_Wealth_Results_GEO <- c()
+    AEG_Wealth_Results_GEO_95ciLB<- c()
+    AEG_Wealth_Results_GEO_95ciUB<- c()
     Coverage_Results_GEO<- c()
+    Coverage_Results_GEO_95ciLB<- c()
+    Coverage_Results_GEO_95ciUB<- c()
   
     #Compute Concentration Indiices By Geographic Unit 
     for (k in 1:length(GEO_CI)){
@@ -399,12 +494,14 @@ VERSE <- function(DATA,COUNTRY,VACCINES,SCHEDULE,FACTORS,GEO){
       # Calculating the Direct Concentration Index
       direct_ci <- ci(y = data_k[,"outcome"], x = pred_probs_2_k$hci_du.response, type = "CI")
       CI_1 <- concentration_index(direct_ci)
-      CI_1
+      CI_1_95ciLB<- CI_1 - 1.96*sqrt(direct_ci$variance)
+      CI_1_95ciUB<- CI_1 + 1.96*sqrt(direct_ci$variance)
       
       # Calculating the Erreygers Corrected Concentration Index 
       CIE <- ci(y = data_k[,"outcome"], x = pred_probs_2_k$hci_du.response, type = "CIc")
       CI_E <- concentration_index(CIE)
-      CI_E
+      CI_E_95ciLB<- CI_E - 1.96*sqrt(CIE$variance)
+      CI_E_95ciUB<- CI_E + 1.96*sqrt(CIE$variance)
       
       # Calculating the Composite Absolute Equity Gap
       rank<-c(pred_probs_2_k$hci_du.response)
@@ -412,18 +509,62 @@ VERSE <- function(DATA,COUNTRY,VACCINES,SCHEDULE,FACTORS,GEO){
       comp_data_k<- data.frame(cbind(data_k[,"outcome"],data_k[,"v005"],rank))
       names(comp_data_k)[names(comp_data_k) == "V1"] <- paste("",i, sep="")
       names(comp_data_k)[names(comp_data_k) == "V2"] <- paste("v005","", sep="")
-      AEG_Composite <- round(weighted.mean(comp_data_k[,i][rank>=quantiles[5]],comp_data_k[,"v005"][rank>=quantiles[5]]) - weighted.mean(comp_data_k[,i][rank>=quantiles[2]],comp_data_k[,"v005"][rank>=quantiles[2]]), digits=3)
+      AEG_Composite <- round(weighted.mean(comp_data_k[,i][rank>=quantiles[5]],comp_data_k[,"v005"][rank>=quantiles[5]]) - weighted.mean(comp_data_k[,i][rank<=quantiles[2]],comp_data_k[,"v005"][rank<=quantiles[2]]), digits=3)
+      AEG_Composite_95ciLB <- AEG_Composite - (1.96*round(sqrt(((weighted.sd(comp_data_k[,i][rank>=quantiles[5]],comp_data_k[,"v005"][rank>=quantiles[5]]))^2)/length(comp_data_k[,i][rank>=quantiles[5]]) + (((weighted.sd(comp_data_k[,i][rank<=quantiles[2]],comp_data_k[,"v005"][rank<=quantiles[2]]))^2)/length(comp_data_k[,i][rank<=quantiles[2]]))), digits=3))
+      AEG_Composite_95ciUB <- AEG_Composite + (1.96*round(sqrt(((weighted.sd(comp_data_k[,i][rank>=quantiles[5]],comp_data_k[,"v005"][rank>=quantiles[5]]))^2)/length(comp_data_k[,i][rank>=quantiles[5]]) + (((weighted.sd(comp_data_k[,i][rank<=quantiles[2]],comp_data_k[,"v005"][rank<=quantiles[2]]))^2)/length(comp_data_k[,i][rank<=quantiles[2]]))), digits=3))
+      
+      # Calculating the Wealth-Based Concentration Index
+      direct_ci <- ci(y = data_k[,"outcome"], x = data_k$v190, type = "CI")
+      CI_W <- concentration_index(direct_ci)
+      CI_W_95ciLB<- CI_W - 1.96*sqrt(direct_ci$variance)
+      CI_W_95ciUB<- CI_W + 1.96*sqrt(direct_ci$variance)
+      
+      # Calculating the Wealth-Based Erreygers Corrected Concentration Index 
+      CIE <- ci(y = data_k[,"outcome"], x = pred_probs_2_k$hci_du.response, type = "CIc")
+      CI_E_W <- concentration_index(CIE)
+      CI_E_W_95ciLB<- CI_E_W - 1.96*sqrt(CIE$variance)
+      CI_E_W_95ciUB<- CI_E_W + 1.96*sqrt(CIE$variance)
+      
+      # Calculating the Wealth-Based Absolute Equity Gap
+      comp_data_k<- data.frame(cbind(data_k[,"outcome"],data_k[,"v005"],data_k[,"v190"]))
+      names(comp_data_k)[names(comp_data_k) == "X1"] <- paste("",i, sep="")
+      names(comp_data_k)[names(comp_data_k) == "X2"] <- paste("v005","", sep="")
+      names(comp_data_k)[names(comp_data_k) == "X3"] <- paste("v190","", sep="")
+      HIGH<- max(comp_data_k$v190)
+      LOW<- min(comp_data_k$v190)
+      AEG_Wealth_GEO <- round(weighted.mean(comp_data_k[,i][comp_data_k$v190>=HIGH],comp_data_k[,"v005"][comp_data_k$v190>=HIGH]) - weighted.mean(comp_data_k[,i][comp_data_k$v190<=LOW],comp_data_k[,"v005"][comp_data_k$v190<=LOW]), digits=3)
+      AEG_Wealth_GEO_95ciLB <- round(AEG_Wealth_GEO - (1.96*round(sqrt(((weighted.sd(comp_data_k[,i][comp_data_k$v190>=HIGH],comp_data_k[,"v005"][comp_data_k$v190>=HIGH]))^2)/length(comp_data_k[,i][comp_data_k$v190>=HIGH]) + (((weighted.sd(comp_data_k[,i][comp_data_k$v190<=LOW],comp_data_k[,"v005"][comp_data_k$v190<=LOW]))^2)/length(comp_data_k[,i][comp_data_k$v190<=LOW]))), digits=3)), digits = 3)
+      AEG_Wealth_GEO_95ciUB <- round(AEG_Wealth_GEO + (1.96*round(sqrt(((weighted.sd(comp_data_k[,i][comp_data_k$v190>=HIGH],comp_data_k[,"v005"][comp_data_k$v190>=HIGH]))^2)/length(comp_data_k[,i][comp_data_k$v190>=HIGH]) + (((weighted.sd(comp_data_k[,i][comp_data_k$v190<=LOW],comp_data_k[,"v005"][comp_data_k$v190<=LOW]))^2)/length(comp_data_k[,i][comp_data_k$v190<=LOW]))), digits=3)), digits = 3)
       
       # Calculating State-Level Coverage
       data_kc <- subset(data_k, data_k[,"underage_i"]==0)
       coverage_GEO<- c(weighted.mean(data_kc$outcome,data_kc$v005))
+      coverage_GEO_95ciLB<- round(coverage_GEO - (1.96*sqrt((coverage_GEO*(1-coverage_GEO))/length(data_kc$outcome))), digits = 3)
+      coverage_GEO_95ciUB<- round(coverage_GEO + (1.96*sqrt((coverage_GEO*(1-coverage_GEO))/length(data_kc$outcome))), digits = 3)
       
       #Storing Results
       CI_Results_GEO<- c(CI_Results_GEO, round(CI_1, digits=3))
+      CI_Results_GEO_95ciLB<- c(CI_Results_GEO_95ciLB, round(CI_1_95ciLB, digits=3))
+      CI_Results_GEO_95ciUB<- c(CI_Results_GEO_95ciUB, round(CI_1_95ciUB, digits=3))
       CI_E_Results_GEO<- c(CI_E_Results_GEO, round(CI_E, digits=3))
+      CI_E_Results_GEO_95ciLB<- c(CI_E_Results_GEO_95ciLB, round(CI_E_95ciLB, digits=3))
+      CI_E_Results_GEO_95ciUB<- c(CI_E_Results_GEO_95ciUB, round(CI_E_95ciUB, digits=3))
       AEG_Composite_Results_GEO<- c(AEG_Composite_Results_GEO, round(AEG_Composite, digits=3))
+      AEG_Composite_Results_GEO_95ciLB<- c(AEG_Composite_Results_GEO_95ciLB, round(AEG_Composite_95ciLB, digits=3))
+      AEG_Composite_Results_GEO_95ciUB<- c(AEG_Composite_Results_GEO_95ciUB, round(AEG_Composite_95ciUB, digits=3))
+      CI_Wealth_Results_GEO<- c(CI_Wealth_Results_GEO, round(CI_W, digits=3))
+      CI_Wealth_Results_GEO_95ciLB<- c(CI_Wealth_Results_GEO_95ciLB, round(CI_W_95ciLB, digits=3))
+      CI_Wealth_Results_GEO_95ciUB<- c(CI_Wealth_Results_GEO_95ciUB, round(CI_W_95ciUB, digits=3))
+      CI_E_Wealth_Results_GEO <- c(CI_E_Wealth_Results_GEO, round(CI_E_W, digits=3))
+      CI_E_Wealth_Results_GEO_95ciLB<- c(CI_E_Wealth_Results_GEO_95ciLB, round(CI_E_W_95ciLB, digits=3))
+      CI_E_Wealth_Results_GEO_95ciUB<- c(CI_E_Wealth_Results_GEO_95ciUB, round(CI_E_W_95ciUB, digits=3))
+      AEG_Wealth_Results_GEO <- c(AEG_Wealth_Results_GEO, round(AEG_Wealth_GEO, digits=3))
+      AEG_Wealth_Results_GEO_95ciLB<- c(AEG_Wealth_Results_GEO_95ciLB, round(AEG_Wealth_GEO_95ciLB, digits=3))
+      AEG_Wealth_Results_GEO_95ciUB<- c(AEG_Wealth_Results_GEO_95ciUB, round(AEG_Wealth_GEO_95ciUB, digits=3))
       Coverage_Results_GEO<- c(Coverage_Results_GEO, round(coverage_GEO, digits=3))
-  
+      Coverage_Results_GEO_95ciLB<- c(Coverage_Results_GEO_95ciLB, round(coverage_GEO_95ciLB, digits=3))
+      Coverage_Results_GEO_95ciUB<- c(Coverage_Results_GEO_95ciUB, round(coverage_GEO_95ciUB, digits=3))
+
     }
     
     #Create Equity-Efficiency Plane
@@ -438,7 +579,7 @@ VERSE <- function(DATA,COUNTRY,VACCINES,SCHEDULE,FACTORS,GEO){
                                          insurance = weighted.mean(v481,v005))))
     
         GEO_UNIT <- c(efficiency_data$`data_ic$v101`)
-        GEO_NAMES <- c(names(efficiency_data$`data_ic$v101`))
+        GEO_NAMES <- c(GEO_CI)
         GEO_LABEL<- paste(GEO_UNIT, GEO_NAMES, sep=" = ")
     
     efficiency <- cbind.data.frame(CI_Results_GEO, GEO_UNIT, GEO_NAMES, GEO_LABEL, efficiency_data)
@@ -492,41 +633,110 @@ VERSE <- function(DATA,COUNTRY,VACCINES,SCHEDULE,FACTORS,GEO){
     
     # Create Output
     CI_Results_GEO_Output<- cbind.data.frame(CI_Results_GEO_Output, CI_Results_GEO)
+    CI_Results_GEO_Output_95ciLB<- cbind.data.frame(CI_Results_GEO_Output_95ciLB, CI_Results_GEO_95ciLB)
+    CI_Results_GEO_Output_95ciUB<- cbind.data.frame(CI_Results_GEO_Output_95ciUB, CI_Results_GEO_95ciUB)
     CI_E_Results_GEO_Output<- cbind.data.frame(CI_E_Results_GEO_Output, CI_E_Results_GEO)
+    CI_E_Results_GEO_Output_95ciLB<- cbind.data.frame(CI_E_Results_GEO_Output_95ciLB, CI_E_Results_GEO_95ciLB)
+    CI_E_Results_GEO_Output_95ciUB<- cbind.data.frame(CI_E_Results_GEO_Output_95ciUB, CI_E_Results_GEO_95ciUB)
     AEG_Composite_Results_GEO_Output<- cbind.data.frame(AEG_Composite_Results_GEO_Output, AEG_Composite_Results_GEO)
+    AEG_Composite_Results_GEO_Output_95ciLB<- cbind.data.frame(AEG_Composite_Results_GEO_Output_95ciLB, AEG_Composite_Results_GEO_95ciLB)
+    AEG_Composite_Results_GEO_Output_95ciUB<- cbind.data.frame(AEG_Composite_Results_GEO_Output_95ciUB, AEG_Composite_Results_GEO_95ciUB)
+    CI_Wealth_Results_GEO_Output<- cbind.data.frame(CI_Wealth_Results_GEO_Output, CI_Wealth_Results_GEO)
+    CI_Wealth_Results_GEO_95ciLB_Output<- cbind.data.frame(CI_Wealth_Results_GEO_95ciLB_Output, CI_Wealth_Results_GEO_95ciLB)
+    CI_Wealth_Results_GEO_95ciUB_Output<- cbind.data.frame(CI_Wealth_Results_GEO_95ciUB_Output, CI_Wealth_Results_GEO_95ciUB)
+    CI_E_Wealth_Results_GEO_Output<- cbind.data.frame(CI_E_Wealth_Results_GEO_Output, CI_E_Wealth_Results_GEO)
+    CI_E_Wealth_Results_GEO_95ciLB_Output<- cbind.data.frame(CI_E_Wealth_Results_GEO_95ciLB_Output, CI_E_Wealth_Results_GEO_95ciLB)
+    CI_E_Wealth_Results_GEO_95ciUB_Output<- cbind.data.frame(CI_E_Wealth_Results_GEO_95ciUB_Output, CI_E_Wealth_Results_GEO_95ciUB)
+    AEG_Wealth_Results_GEO_Output<- cbind.data.frame(AEG_Wealth_Results_GEO_Output, AEG_Wealth_Results_GEO)
+    AEG_Wealth_Results_GEO_95ciLB_Output<- cbind.data.frame(AEG_Wealth_Results_GEO_95ciLB_Output, AEG_Wealth_Results_GEO_95ciLB)
+    AEG_Wealth_Results_GEO_95ciUB_Output<- cbind.data.frame(AEG_Wealth_Results_GEO_95ciUB_Output, AEG_Wealth_Results_GEO_95ciUB)
     Coverage_Results_GEO_Output<- cbind.data.frame(Coverage_Results_GEO_Output, Coverage_Results_GEO)
+    Coverage_Results_GEO_Output_95ciLB <- cbind.data.frame(Coverage_Results_GEO_Output_95ciLB, Coverage_Results_GEO_95ciLB)
+    Coverage_Results_GEO_Output_95ciUB <- cbind.data.frame(Coverage_Results_GEO_Output_95ciUB, Coverage_Results_GEO_95ciUB)
     
+    # Name Output
     names(CI_Results_GEO_Output)[names(CI_Results_GEO_Output) == "CI_Results_GEO"] <- paste("CI_GEO_",i, sep="")
+    names(CI_Results_GEO_Output_95ciLB)[names(CI_Results_GEO_Output_95ciLB) == "CI_Results_GEO_95ciLB"] <- paste("CI_GEO_95ciLB_",i, sep="")
+    names(CI_Results_GEO_Output_95ciUB)[names(CI_Results_GEO_Output_95ciUB) == "CI_Results_GEO_95ciUB"] <- paste("CI_GEO_95ciUB_",i, sep="")
     names(CI_E_Results_GEO_Output)[names(CI_E_Results_GEO_Output) == "CI_E_Results_GEO"] <- paste("CI_E_GEO_",i, sep="")
+    names(CI_E_Results_GEO_Output_95ciLB)[names(CI_E_Results_GEO_Output_95ciLB) == "CI_E_Results_GEO_95ciLB"] <- paste("CI_E_GEO_95ciLB_",i, sep="")
+    names(CI_E_Results_GEO_Output_95ciUB)[names(CI_E_Results_GEO_Output_95ciUB) == "CI_E_Results_GEO_95ciUB"] <- paste("CI_E_GEO_95ciUB_",i, sep="")
     names(AEG_Composite_Results_GEO_Output)[names(AEG_Composite_Results_GEO_Output) == "AEG_Composite_Results_GEO"] <- paste("AEG_Composite_GEO_",i, sep="")
+    names(AEG_Composite_Results_GEO_Output_95ciLB)[names(AEG_Composite_Results_GEO_Output_95ciLB) == "AEG_Composite_Results_GEO_95ciLB"] <- paste("AEG_Composite_GEO_95ciLB_",i, sep="")
+    names(AEG_Composite_Results_GEO_Output_95ciUB)[names(AEG_Composite_Results_GEO_Output_95ciUB) == "AEG_Composite_Results_GEO_95ciUB"] <- paste("AEG_Composite_GEO_95ciUB_",i, sep="")
+    names(CI_Wealth_Results_GEO_Output)[names(CI_Wealth_Results_GEO_Output) == "CI_Wealth_Results_GEO"] <- paste("CI_Wealth_GEO_",i, sep="")
+    names(CI_Wealth_Results_GEO_95ciLB_Output)[names(CI_Wealth_Results_GEO_95ciLB_Output) == "CI_Wealth_Results_GEO_95ciLB"] <- paste("CI_Wealth_GEO_95ciLB_",i, sep="")
+    names(CI_Wealth_Results_GEO_95ciUB_Output)[names(CI_Wealth_Results_GEO_95ciUB_Output) == "CI_Wealth_Results_GEO_95ciUB"] <- paste("CI_Wealth_GEO_95ciUB_",i, sep="")
+    names(CI_E_Wealth_Results_GEO_Output)[names(CI_E_Wealth_Results_GEO_Output) == "CI_E_Wealth_Results_GEO"] <- paste("CI_E_Wealth_Results_GEO_",i, sep="")
+    names(CI_E_Wealth_Results_GEO_95ciLB_Output)[names(CI_E_Wealth_Results_GEO_95ciLB_Output) == "CI_E_Wealth_Results_GEO_95ciLB"] <- paste("CI_E_Wealth_Results_GEO_95ciLB_",i, sep="")
+    names(CI_E_Wealth_Results_GEO_95ciUB_Output)[names(CI_E_Wealth_Results_GEO_95ciUB_Output) == "CI_E_Wealth_Results_GEO_95ciUB"] <- paste("CI_E_Wealth_Results_GEO_95ciUB_",i, sep="")
+    names(AEG_Wealth_Results_GEO_Output)[names(AEG_Wealth_Results_GEO_Output) == "AEG_Wealth_Results_GEO"] <- paste("AEG_Wealth_Results_GEO_",i, sep="")
+    names(AEG_Wealth_Results_GEO_95ciLB_Output)[names(AEG_Wealth_Results_GEO_95ciLB_Output) == "AEG_Wealth_Results_GEO_95ciLB"] <- paste("AEG_Wealth_Results_GEO_95ciLB_",i, sep="")
+    names(AEG_Wealth_Results_GEO_95ciUB_Output)[names(AEG_Wealth_Results_GEO_95ciUB_Output) == "AEG_Wealth_Results_GEO_95ciUB"] <- paste("AEG_Wealth_Results_GEO_95ciUB_",i, sep="")
     names(Coverage_Results_GEO_Output)[names(Coverage_Results_GEO_Output) == "Coverage_Results_GEO"] <- paste("Coverage_GEO_",i, sep="")
-    
+    names(Coverage_Results_GEO_Output_95ciLB)[names(Coverage_Results_GEO_Output_95ciLB) == "Coverage_Results_GEO_95ciLB"] <- paste("Coverage_Results_GEO_95ciLB_",i, sep="")
+    names(Coverage_Results_GEO_Output_95ciUB)[names(Coverage_Results_GEO_Output_95ciUB) == "Coverage_Results_GEO_95ciUB"] <- paste("Coverage_Results_GEO_95ciUB_",i, sep="")
+
+    #Show Analysis Progress
     print(paste(i,"analysis completed", sep=" "))
   }
   
-  
   CI_Results_GEO_Output[,1]<- GEO_CI
+  CI_Results_GEO_Output_95ciLB[,1]<- GEO_CI
+  CI_Results_GEO_Output_95ciUB[,1]<- GEO_CI
   CI_E_Results_GEO_Output[,1]<- GEO_CI
+  CI_E_Results_GEO_Output_95ciLB[,1]<- GEO_CI
+  CI_E_Results_GEO_Output_95ciUB[,1]<- GEO_CI
   AEG_Composite_Results_GEO_Output[,1]<- GEO_CI
+  AEG_Composite_Results_GEO_Output_95ciLB[,1]<- GEO_CI
+  AEG_Composite_Results_GEO_Output_95ciUB[,1]<- GEO_CI
+  CI_Wealth_Results_GEO_Output[,1]<- GEO_CI
+  CI_Wealth_Results_GEO_95ciLB_Output[,1]<- GEO_CI
+  CI_Wealth_Results_GEO_95ciUB_Output[,1]<- GEO_CI
+  CI_E_Wealth_Results_GEO_Output[,1]<- GEO_CI
+  CI_E_Wealth_Results_GEO_95ciLB_Output[,1]<- GEO_CI
+  CI_E_Wealth_Results_GEO_95ciUB_Output[,1]<- GEO_CI
+  AEG_Wealth_Results_GEO_Output[,1]<- GEO_CI
+  AEG_Wealth_Results_GEO_95ciLB_Output[,1]<- GEO_CI
+  AEG_Wealth_Results_GEO_95ciUB_Output[,1]<- GEO_CI
   Coverage_Results_GEO_Output[,1]<- GEO_CI
-
+  Coverage_Results_GEO_Output_95ciLB[,1]<- GEO_CI
+  Coverage_Results_GEO_Output_95ciUB[,1]<- GEO_CI
+  
   names(CI_Results_GEO_Output)[1] <-GEO
+  names(CI_Results_GEO_Output_95ciLB)[1] <-GEO
+  names(CI_Results_GEO_Output_95ciUB)[1] <-GEO
   names(CI_E_Results_GEO_Output)[1]<- GEO
+  names(CI_E_Results_GEO_Output_95ciLB)[1]<- GEO
+  names(CI_E_Results_GEO_Output_95ciUB)[1]<- GEO
   names(AEG_Composite_Results_GEO_Output)[1]<- GEO
+  names(AEG_Composite_Results_GEO_Output_95ciLB)[1]<- GEO
+  names(AEG_Composite_Results_GEO_Output_95ciUB)[1]<- GEO
+  names(CI_Wealth_Results_GEO_Output)[1] <-GEO
+  names(CI_Wealth_Results_GEO_95ciLB_Output)[1] <-GEO
+  names(CI_Wealth_Results_GEO_95ciUB_Output)[1] <-GEO
+  names(CI_E_Wealth_Results_GEO_Output)[1]<- GEO
+  names(CI_E_Wealth_Results_GEO_95ciLB_Output)[1]<- GEO
+  names(CI_E_Wealth_Results_GEO_95ciUB_Output)[1]<- GEO
+  names(AEG_Wealth_Results_GEO_Output)[1]<- GEO
+  names(AEG_Wealth_Results_GEO_95ciLB_Output)[1]<- GEO
+  names(AEG_Wealth_Results_GEO_95ciUB_Output)[1]<- GEO
   names(Coverage_Results_GEO_Output)[1]<- GEO
+  names(Coverage_Results_GEO_Output_95ciLB)[1]<- GEO
+  names(Coverage_Results_GEO_Output_95ciUB)[1]<- GEO
   
   #Create Output of Function
   output[,1] <- c("Underage",GEO,"Rural","Maternal Education","Wealth Index","Sex of Child","Health Insurance", "Residual","Total")
   
   output_list <- c(output_list, output)
+
+  equity_national <- data.frame(VACCINES, Coverage_Results,Coverage_Results_95ciLB, Coverage_Results_95ciUB, CI_Results, CI_Results_95ciLB, CI_Results_95ciUB, CI_E_Results, CI_E_Results_95ciLB, CI_E_Results_95ciUB, AEG_Composite_Results, AEG_Composite_Results_95ciLB, AEG_Composite_Results_95ciUB, CI_Wealth_Results, CI_Wealth_Results_95ciLB, CI_Wealth_Results_95ciUB, CI_E_Wealth_Results, CI_E_Wealth_Results_95ciLB, CI_E_Wealth_Results_95ciUB, AEG_Wealth_Results, AEG_Wealth_Results_95ciLB, AEG_Wealth_Results_95ciUB)
   
-  equity_national <- data.frame(VACCINES, Coverage_Results, CI_Results, CI_E_Results, AEG_Composite_Results)
-  
-  equity_state<- data.frame(Coverage_Results_GEO_Output,CI_Results_GEO_Output,CI_E_Results_GEO_Output,AEG_Composite_Results_GEO_Output)
+  equity_state<- data.frame(Coverage_Results_GEO_Output, Coverage_Results_GEO_Output_95ciLB, Coverage_Results_GEO_Output_95ciUB, CI_Results_GEO_Output, CI_Results_GEO_Output_95ciLB, CI_Results_GEO_Output_95ciUB, CI_E_Results_GEO_Output, CI_E_Results_GEO_Output_95ciLB, CI_E_Results_GEO_Output_95ciUB, AEG_Composite_Results_GEO_Output, AEG_Composite_Results_GEO_Output_95ciLB, AEG_Composite_Results_GEO_Output_95ciUB, CI_Wealth_Results_GEO_Output, CI_Wealth_Results_GEO_95ciLB_Output, CI_Wealth_Results_GEO_95ciUB_Output, CI_E_Wealth_Results_GEO_Output, CI_E_Wealth_Results_GEO_95ciLB_Output, CI_E_Wealth_Results_GEO_95ciUB_Output, AEG_Wealth_Results_GEO_Output, AEG_Wealth_Results_GEO_95ciLB_Output, AEG_Wealth_Results_GEO_95ciUB_Output)
   
   reference<-data.frame(FACTORS,REF)
   
-  output_list <- c(output_list, equity_national, Coverage_Results_GEO_Output, CI_Results_GEO_Output, CI_E_Results_GEO_Output, AEG_Composite_Results_GEO_Output, reference)
+  output_list <- c(output_list, equity_national, equity_state, reference)
   
   return(output_list)
 }
